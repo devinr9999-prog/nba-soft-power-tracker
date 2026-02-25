@@ -40,3 +40,9 @@ streamlit
 pandas
 requests
 trafilatura
+streamlit
+pandas
+requests
+trafilatura
+gspread
+google-auth
