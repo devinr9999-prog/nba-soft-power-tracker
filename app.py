@@ -10,11 +10,37 @@ import requests
 import trafilatura
 
 import gspread
-from google.oauth2.service_account import Credentials
+from gspread.exceptions import WorksheetNotFound
 
+def gs_worksheet():
+    gc = gs_client()
+    sh = gc.open_by_key(st.secrets["sheets"]["spreadsheet_id"])
 
-# -----------------------------
-# Config / Frames
+    ws_name = st.secrets["sheets"]["worksheet_name"].strip()
+
+    # 1) Try exact match
+    try:
+        return sh.worksheet(ws_name)
+    except WorksheetNotFound:
+        pass
+
+    # 2) Try case-insensitive match (handles Documents vs documents)
+    for ws in sh.worksheets():
+        if ws.title.strip().lower() == ws_name.lower():
+            return ws
+
+    # 3) If still not found, create it
+    #    (set enough columns for your fields; you can adjust later)
+    ws = sh.add_worksheet(title=ws_name, rows=1000, cols=20)
+
+    # Optional: set header row so get_all_records() works immediately
+    headers = [
+        "id", "country", "source", "doc_date", "title", "url", "excerpt",
+        "auto_frame", "auto_frame_score", "auto_summary", "auto_method", "auto_keywords",
+        "frames", "sentiment", "soft_power_score", "coder", "coded_at", "memo", "created_at",
+    ]
+    ws.insert_row(headers, 1)
+    return ws
 # -----------------------------
 FRAMES = [
     "Meritocracy",
